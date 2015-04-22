@@ -42,7 +42,23 @@ server.on_close = function(){
 };
 ```
 
+To send information to all the other users connected to the same room:
+```js
+server.sendMessage("mymessage");
+```
 
 
+You can store information in the server so future users could retrieve it even if you are offline:
+```js
+server.storeData("mykey", "mydata");
+//...
+server.loadData("mykey", function(data) { console.log(data); }); //should print mydata
+```
+but remember that this information will be lost if the server get shut down.
 
+You can also retrieve information about the current rooms open in the server:
+```js
+server.getReport( function(report) { ... } );
+```
 
+Rooms that have a name that start with an underscore "_" will be ignored in the report.
