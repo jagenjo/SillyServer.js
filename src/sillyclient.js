@@ -128,6 +128,8 @@ SillyClient.prototype.sendMessage = function(msg)
 
 SillyClient.prototype.setData = function(key, value)
 {
+	if(!this.url)
+		throw("Cannot getData if not connected to the server");
 	var req = new XMLHttpRequest();
 	req.open('GET', "http://" + this.url + "/data?action=set&key="+key + ((value !== undefined && value !== null) ? "&value="+value : ""), true);
 	req.onreadystatechange = function (aEvt) {
@@ -141,6 +143,8 @@ SillyClient.prototype.setData = function(key, value)
 
 SillyClient.prototype.getData = function(key, on_complete)
 {
+	if(!this.url)
+		throw("Cannot getData if not connected to the server");
 	var req = new XMLHttpRequest();
 	req.open('GET', "http://" + this.url + "/data?action=get&key="+key, true);
 	req.onreadystatechange = function (aEvt) {
