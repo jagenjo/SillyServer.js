@@ -17,18 +17,33 @@ server.on_connect = function(){
 	$("#server-icon")[0].src = "imgs/server-icon.png";
 	if(timer)
 		clearInterval( timer );
-	timer = setInterval( onTick, 10000 );
+	timer = setInterval( onTick, 30000 ); //Every 30 seconds
 };
 
 //this methods receives messages from other users (author_id its an unique identifier)
 server.on_message = function( author_id, msg ){
 	//change the website
+	var chat = $("#chat")[0];
+
 	$("#data-sent").html( server.info_received );
+	if(chat.childNodes.length > 200)
+		$(chat.childNodes[0]).remove();
+	$(chat).append("<p class='msg'>user_"+author_id+": "+msg+"</p>");
+	$(chat).animate({
+          scrollTop:  10000000000000
+     });
 }
 
 //this methods is called when a new user is connected
 server.on_user_connected = function(msg){
 	//new user!
+	$("#chat").append("<p class='msg'>User connected</p>");
+}
+
+//this methods is called when a new user is connected
+server.on_user_disconnected = function(msg){
+	//bye user
+	$("#chat").append("<p class='msg'>User disconnected</p>");
 }
 
 //this methods is called when the server gets closed (its shutdown)
@@ -42,7 +57,7 @@ server.on_close = function(){
 	}
 };
 
-//We call this function every 10 seconds to have an example
+//We call this function every 30 seconds to have an example
 function onTick()
 {
 	if(server && server.is_connected)

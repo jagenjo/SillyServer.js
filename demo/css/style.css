@@ -8,3 +8,23 @@ body {
 	background: linear-gradient(135deg,  #ad6499 0%,#8658b7 47%,#492033 100%); /* W3C */
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ad6499', endColorstr='#492033',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 }
+
+#chat {
+	height: 300px;
+	border-radius: 3px;
+	border: 0;
+	padding: 10px;
+	margin: 10px;
+	background-color: rgba(255,255,255,0.5);
+	color: black;
+	text-shadow: 0 0 0 transparent;
+	overflow: auto;
+	text-align: left;
+}
+
+#chat p {
+	font-size: 14px;
+	margin: 2px;
+}
+
+

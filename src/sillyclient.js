@@ -118,15 +118,19 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 	}
 }
 
-SillyClient.prototype.sendMessage = function(msg)
+SillyClient.prototype.sendMessage = function( msg, target_ids )
 {
 	if(typeof(msg) == "object")
 		msg = JSON.stringify(msg);
+
 	if(!this.socket || this.socket.readyState !== WebSocket.OPEN)
 	{
 		console.error("Not connected, cannot send info");
 		return;
 	}
+
+	if( target_ids )
+		msg = "@" + target_ids.join(",") + "|" + msg;
 
 	this.socket.send(msg);
 	this.info_transmitted += 1;

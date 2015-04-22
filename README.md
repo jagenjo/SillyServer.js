@@ -47,6 +47,11 @@ To send information to all the other users connected to the same room:
 server.sendMessage("mymessage");
 ```
 
+Or to send information only to some users, you pass the users id in an array
+```js
+server.sendMessage("mymessage", [1,4,7]);
+```
+
 
 You can store information in the server so future users could retrieve it even if you are offline:
 ```js
