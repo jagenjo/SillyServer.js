@@ -9,6 +9,14 @@ For the client part it comes with a javascript library that provides all the met
 
 It has been used in simple web-applications where you want to connect online users between them.
 
+# Installation
+
+Server is stored in src/server folder
+before launching the server you need to use npm to install the libraries
+```js
+npm install faye-websocket
+```
+
 # Usage
 
 Launch the server using the command:
