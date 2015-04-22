@@ -246,7 +246,7 @@ SillyServer.prototype.httpHandler = function(request, response)
 	var that = this;
 	var path = request.url;
 	if(this.verbose)
-		console.log(" http request: " + path);
+		console.log(" http request: " + path); 
 
 	function sendResponse(response,status_code,data)
 	{
