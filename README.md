@@ -65,5 +65,13 @@ You can also retrieve information about the current rooms open in the server:
 ```js
 server.getReport( function(report) { ... } );
 ```
-
 Rooms that have a name that start with an underscore "_" will be ignored in the report.
+
+
+
+Or info about one specific room:
+```js
+server.getRoomInfo( "myroom", function(room_info) { ... } );
+```
+
+
