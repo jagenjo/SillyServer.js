@@ -26,7 +26,7 @@ server.on_connect = function(){
   //connected
 };
 
-//this methods receives messages from other users (author_id its an unique identifier)
+//this methods receives messages from other users (author_id is an unique identifier per user)
 server.on_message = function( author_id, msg ){
   //data received
 }
@@ -36,7 +36,7 @@ server.on_user_connected = function(msg){
 	//new user!
 }
 
-//this methods is called when the server gets closed (its shutdown)
+//this methods is called when the server gets closed (it shutdowns)
 server.on_close = function(){
   //server closed
 };
