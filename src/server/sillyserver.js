@@ -134,6 +134,7 @@ SillyServer.prototype.onConnection = function(ws)
 			{
 				var header = data.substr(1,header_pos-1);
 				target_ids = header.split(",").map(function(v){ return parseInt(v); });
+				data = data.substr(header_pos+1);
 			}
 		}
 
@@ -163,7 +164,17 @@ SillyServer.prototype.createRoom = function(name, options)
 	options = options || {};
 	console.log("Room created: " + name );
 	this.rooms[name] = { clients: [], buffer:[] };
-},
+}
+
+SillyServer.prototype.getRoomInfo = function(name)
+{
+	var room = this.rooms[name];
+
+	var r = { clients: [] };
+	for(var i in room.clients )
+		r.clients.push( room.clients[i].user_id );
+	return r;
+}
 
 SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback, target_ids )
 {
@@ -196,11 +207,12 @@ SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback, 
 	//broadcast
 	for(var i = 0; i < room.clients.length; ++i)
 	{
+		var client = room.clients[i];
+
 		//skip in case is a targeted msg
-		if( target_ids && target_ids.indexOf( i ) == -1 )
+		if( target_ids && target_ids.indexOf( client.user_id ) == -1 )
 			continue;
 
-		var client = room.clients[i];
 		if (feedback || client.user_id != id)
 			client.send( packet_data );
 	}
@@ -334,6 +346,15 @@ SillyServer.prototype.httpHandler = function(request, response)
 	else if(path_info.pathname == "/showvars")
 	{
 		sendResponse(response, 200, {'status':1,'msg':'var list', 'db': that.db } );
+	}
+	else if(path_info.pathname == "/room_info")
+	{
+			var GET = path_info.query;
+			var room_name = GET["name"];
+			if( !room_name || !this.rooms[ room_name ] )
+				sendResponse(response, 200, {'status':1,'msg':'room not found'} );
+			else
+				sendResponse(response, 200, {'status':1,'msg':'room info', data: this.getRoomInfo( room_name )} );
 	}
 	else if(path_info.pathname == "/info")
 	{
