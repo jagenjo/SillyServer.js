@@ -12,12 +12,12 @@ It has been used in simple web-applications where you want to connect online use
 # Usage
 
 Launch the server using the command:
-```
+```js
 nodejs main.js -port 55000
 ```
 
 On the client side include the library sillyclient.js and connect using:
-```
+```js
 var server = new SillyClient();
 server.connect( location.host + ":55000", "CHAT");
 
