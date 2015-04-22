@@ -9,6 +9,8 @@ function SillyClient()
 	this.info_transmitted = 0;
 	this.info_received = 0;
 
+	this.feedback = false; //if you want message to bounce back to you
+
 	this.user_id = 0;
 	this.user_name = "anonymous";
 
@@ -38,8 +40,12 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 		return;
 	}
 
+	var params = "";
+	if(this.feedback)
+		params = "?feedback=1";
+
 	//connect
-	this.socket = new WebSocket("ws://"+url+"/" + room_name);
+	this.socket = new WebSocket("ws://"+url+"/" + room_name + params );
 	this.socket.onopen = function(){  
 		that.is_connected = true;
 		console.log("Socket has been opened! :)");  
@@ -126,25 +132,27 @@ SillyClient.prototype.sendMessage = function(msg)
 	this.info_transmitted += 1;
 }
 
-SillyClient.prototype.setData = function(key, value)
+SillyClient.prototype.storeData = function(key, value, on_complete)
 {
 	if(!this.url)
-		throw("Cannot getData if not connected to the server");
+		throw("Cannot storeData if not connected to the server");
 	var req = new XMLHttpRequest();
 	req.open('GET', "http://" + this.url + "/data?action=set&key="+key + ((value !== undefined && value !== null) ? "&value="+value : ""), true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)
 			return console.error("Error setting data: ", req.responseText );
+		 if(on_complete)
+			 on_complete( JSON.parse(req.responseText) );
 	  }
 	};
 	req.send(null);
 }
 
-SillyClient.prototype.getData = function(key, on_complete)
+SillyClient.prototype.loadData = function(key, on_complete)
 {
 	if(!this.url)
-		throw("Cannot getData if not connected to the server");
+		throw("Cannot loadData if not connected to the server");
 	var req = new XMLHttpRequest();
 	req.open('GET', "http://" + this.url + "/data?action=get&key="+key, true);
 	req.onreadystatechange = function (aEvt) {
@@ -154,6 +162,22 @@ SillyClient.prototype.getData = function(key, on_complete)
 		 var resp = JSON.parse(req.responseText);
 		 if(on_complete)
 			 on_complete( resp.data );
+	  }
+	};
+	req.send(null);
+}
+
+SillyClient.prototype.getReport = function( on_complete )
+{
+	var req = new XMLHttpRequest();
+	req.open('GET', "http://" + this.url + "/info", true);
+	req.onreadystatechange = function (aEvt) {
+	  if (req.readyState == 4) {
+		 if(req.status != 200)
+			return console.error("Error setting data: ", req.responseText );
+		 var resp = JSON.parse(req.responseText);
+		 if(on_complete)
+			 on_complete( resp );
 	  }
 	};
 	req.send(null);

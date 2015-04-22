@@ -95,8 +95,10 @@ SillyServer.prototype.onConnection = function(ws)
 	var room_name = path_info.pathname;
 	ws.room = room_name.substr(1, room_name.length); //strip the dash
 
-	if(params.feedback != '0' && params.feedback != 'false') ws.feedback = true;
-	else ws.feedback = false;
+	if(params.feedback != '0' && params.feedback != 'false')
+		ws.feedback = true;
+	else
+		ws.feedback = false;
 
 	//add to room (or create it)
 	if(this.rooms[ws.room] == null)
@@ -120,9 +122,22 @@ SillyServer.prototype.onConnection = function(ws)
 	ws.onmessage = (function(event) {
 		//console.log(ws.ip + ' = ' + typeof(event.data) + "["+event.data.length+"]:" + event.data );
 		//console.dir(event.data); //like var_dump
-
 		var is_binary = (typeof(event.data) != "string");
-		this.sendToRoom(ws.room, ws.user_id, is_binary ? "DATA" : "MSG", event.data, ws.feedback);
+		var data = event.data;
+		var target_ids = null;
+
+		//used to targeted messages
+		if(!is_binary && data.length && data[0] == "@")
+		{
+			var header_pos = data.indexOf("|");
+			if(header_pos != -1)
+			{
+				var header = data.substr(1,header_pos-1);
+				target_ids = header.split(",").map(function(v){ return parseInt(v); });
+			}
+		}
+
+		this.sendToRoom(ws.room, ws.user_id, is_binary ? "DATA" : "MSG", data, ws.feedback, target_ids );
 
 		if(this.verbose)
 			console.log(ws.ip + ' => ' + (is_binary ? "[DATA]" : event.data) );
@@ -150,7 +165,7 @@ SillyServer.prototype.createRoom = function(name, options)
 	this.rooms[name] = { clients: [], buffer:[] };
 },
 
-SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback )
+SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback, target_ids )
 {
 	var room = this.rooms[room_name];
 	if(!room)
@@ -179,12 +194,19 @@ SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback )
 	}
 
 	//broadcast
-	for(var i in room.clients)
-		if (feedback || room.clients[i].user_id != id)
-			room.clients[i].send(packet_data);
+	for(var i = 0; i < room.clients.length; ++i)
+	{
+		//skip in case is a targeted msg
+		if( target_ids && target_ids.indexOf( i ) == -1 )
+			continue;
+
+		var client = room.clients[i];
+		if (feedback || client.user_id != id)
+			client.send( packet_data );
+	}
 }
 
-//DATABASE
+//DATABASE info storage
 SillyServer.prototype.setData = function(name, value)
 {
 	if(value === undefined)
@@ -203,12 +225,19 @@ SillyServer.prototype.getReport = function()
 {
 	var r = {};
 	for(var i in this.rooms)
-		r[i] = this.rooms[i].clients.length;
+		if(i[0] != "_") //hidden room
+			r[i] = this.rooms[i].clients.length;
+
 	var c = {};
 	for(var i in this.clients)
-		c[i] = {id: this.clients[i].user_id, ip: this.clients[i].ip, room: this.clients[i].room, packets: this.clients[i].packets};
+	{
+		var room_name = this.clients[i].room;
+		if(room_name[0] == "_")
+			room_name = "***HIDDEN***";
+		c[i] = {id: this.clients[i].user_id, ip: this.clients[i].ip, room: room_name, packets: this.clients[i].packets};
+	}
 
-	return {rooms:r, clients:c };
+	return { rooms:r, clients:c };
 }
 
 // HTTP SERVER  (used for administration) **********************
@@ -216,10 +245,12 @@ SillyServer.prototype.httpHandler = function(request, response)
 {
 	var that = this;
 	var path = request.url;
-	console.log("http request: " + path);
+	if(this.verbose)
+		console.log(" http request: " + path);
 
 	function sendResponse(response,status_code,data)
 	{
+		//allow cors
 		response.writeHead(status_code, {'Content-Type': 'text/plain', "Access-Control-Allow-Origin":"*"});
 		if( typeof(data) == "object")
 			response.write( JSON.stringify( data ) );
@@ -302,7 +333,7 @@ SillyServer.prototype.httpHandler = function(request, response)
 	}
 	else if(path_info.pathname == "/showvars")
 	{
-		sendResponse(response, 200, {'status':1,'msg':'var list', 'db':that.db } );
+		sendResponse(response, 200, {'status':1,'msg':'var list', 'db': that.db } );
 	}
 	else if(path_info.pathname == "/info")
 	{
