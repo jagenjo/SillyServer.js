@@ -1,4 +1,5 @@
-//
+//SillyClient.js allows to connect to SillyServer.js, more info in https://github.com/jagenjo/SillyServer.js/
+//Javi Agenjo 2015
 
 function SillyClient()
 {
@@ -21,6 +22,7 @@ function SillyClient()
 	this.on_user_disconnected = null;
 }
 
+//Connects to server, you must specify server host (p.e: "tamats.com:55000") and room name
 SillyClient.prototype.connect = function( url, room_name, on_connect, on_message, on_close )
 {
 	room_name = room_name || "";
@@ -68,11 +70,11 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 
 	this.socket.onmessage = function(msg){  
 		that.info_received += 1;
-		var tokens = msg.data.split("|");
+		var tokens = msg.data.split("|"); //author id | cmd | data
 		if(tokens.length < 3)
 			console.log("Received: " + msg.data); //Awesome!  
 		else
-			that.onServerEvent( tokens[0],tokens[1], msg.data.substr( tokens[0].length + tokens[1].length + 2, msg.data.length), on_message );
+			that.onServerEvent( tokens[0], tokens[1], msg.data.substr( tokens[0].length + tokens[1].length + 2, msg.data.length), on_message );
 	}
 
 	this.socket.onerror = function(err){  
@@ -82,6 +84,17 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 	return true;
 }
 
+//Close the connection with the server
+SillyClient.prototype.close = function()
+{
+	if(!this.socket)
+		return;
+
+	this.socket.close();
+	this.socket = null;
+}
+
+//Process events 
 SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message )
 {
 	if (cmd == "MSG") //user message received
@@ -110,16 +123,22 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 			this.on_user_disconnected( author_id );
 		delete this.clients[ author_id ];
 	}
-	else if (cmd == "ID") //retrieve user id
+	else if (cmd == "ID") //retrieve your user id
 	{
 		this.user_id = author_id;
 		this.user_name = "user_" + author_id.toString(); 
 		this.clients[ author_id ] = { id: author_id, name: this.user_name };
+		if(this.on_ready)
+			this.on_ready( author_id );
 	}
 }
 
+//target_ids is optional, if not specified the message is send to all
 SillyClient.prototype.sendMessage = function( msg, target_ids )
 {
+	if(msg === null)
+		return;
+
 	if(typeof(msg) == "object")
 		msg = JSON.stringify(msg);
 
@@ -129,13 +148,14 @@ SillyClient.prototype.sendMessage = function( msg, target_ids )
 		return;
 	}
 
-	if( target_ids )
+	if( msg.constructor === String && target_ids )
 		msg = "@" + target_ids.join(",") + "|" + msg;
 
 	this.socket.send(msg);
 	this.info_transmitted += 1;
 }
 
+//To store temporal information in the server
 SillyClient.prototype.storeData = function(key, value, on_complete)
 {
 	if(!this.url)
@@ -153,6 +173,7 @@ SillyClient.prototype.storeData = function(key, value, on_complete)
 	req.send(null);
 }
 
+//To retrieve the temporal information from the server
 SillyClient.prototype.loadData = function(key, on_complete)
 {
 	if(!this.url)
@@ -171,6 +192,7 @@ SillyClient.prototype.loadData = function(key, on_complete)
 	req.send(null);
 }
 
+//Returns a report with information about clients connected and rooms open
 SillyClient.prototype.getReport = function( on_complete )
 {
 	var req = new XMLHttpRequest();
@@ -187,6 +209,7 @@ SillyClient.prototype.getReport = function( on_complete )
 	req.send(null);
 }
 
+//Returns info about a room (which clients are connected)
 SillyClient.prototype.getRoomInfo = function( name, on_complete )
 {
 	var req = new XMLHttpRequest();

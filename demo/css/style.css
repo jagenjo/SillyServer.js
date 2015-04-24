@@ -27,4 +27,8 @@ body {
 	margin: 2px;
 }
 
-
+.cursor {
+	position: fixed;
+	color: black;
+	pointer-events: none;
+}

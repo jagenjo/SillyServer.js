@@ -15,6 +15,8 @@ function SillyServer( server, secure )
 	this.last_id = 1; //0 is reserved for server messages
 	this.blacklist = {}; //blacklisted users by ip
 
+	this.debug_room = null; //if you enter this room you get all the traffic
+
 	this.MAX_BUFFER = 100;
 	this.buffering = false;
 	this.verbose = false;
@@ -95,7 +97,7 @@ SillyServer.prototype.onConnection = function(ws)
 	var room_name = path_info.pathname;
 	ws.room = room_name.substr(1, room_name.length); //strip the dash
 
-	if(params.feedback != '0' && params.feedback != 'false')
+	if(params.feedback == '1' || params.feedback == 'true')
 		ws.feedback = true;
 	else
 		ws.feedback = false;
@@ -216,6 +218,15 @@ SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback, 
 		if (feedback || client.user_id != id)
 			client.send( packet_data );
 	}
+
+	//broadcast to debug room
+	if(this.debug_room && this.rooms[this.debug_room])
+	{
+		var debug_room = this.rooms[this.debug_room];
+		if(debug_room.clients.length)
+			for(var i = 0; i < debug_room.clients.length; ++i)
+				debug_room.clients[i].send( packet_data + "{"+room_name+"}" );
+	}
 }
 
 //DATABASE info storage
@@ -237,14 +248,14 @@ SillyServer.prototype.getReport = function()
 {
 	var r = {};
 	for(var i in this.rooms)
-		if(i[0] != "_") //hidden room
+		if(i[0] != "_" && i != this.debug_room) //hidden room
 			r[i] = this.rooms[i].clients.length;
 
 	var c = {};
 	for(var i in this.clients)
 	{
 		var room_name = this.clients[i].room;
-		if(room_name[0] == "_")
+		if(room_name[0] == "_" || i == this.debug_room)
 			room_name = "***HIDDEN***";
 		c[i] = {id: this.clients[i].user_id, ip: this.clients[i].ip, room: room_name, packets: this.clients[i].packets};
 	}
@@ -292,22 +303,19 @@ SillyServer.prototype.httpHandler = function(request, response)
 				{
 					var name = POST["key"];
 					var value = POST["value"];
-					if(typeof(name) != "undefined" && typeof(value) != "undefined")
+					if( name )
 					{
-						that.setData( name, value);
+						that.setData( name, value );
 						sendResponse(response, 200, {'status':1,'msg':'var set'} );
 					}
 					else
-					{
-						console.log("Info missing");
-						sendResponse(response, 200, {'status':0,'msg':'nothing to do'} );
-					}
+						sendResponse(response, 200, {'status':-1,'msg':'key missing'} );
 				}
 				else if(POST["action"] == "get")
 				{
 					var name = POST["key"];
 					var value = that.getData(name);
-					if(value != null)
+					if(value !== undefined)
 						sendResponse(response, 200, {'status':1,'data': value} );
 					else
 						sendResponse(response, 200, {'status':1,'msg':'var not found ' + name} );
@@ -324,8 +332,13 @@ SillyServer.prototype.httpHandler = function(request, response)
 				{
 					var name = GET["key"];
 					var value = GET["value"];
-					that.setData(name,value);
-					sendResponse(response, 200, {'status':1,'msg':'var set'} );
+					if( name )
+					{
+						that.setData(name,value);
+						sendResponse(response, 200, {'status':1,'msg':'var set'} );
+					}
+					else
+						sendResponse(response, 200, {'status':-1,'msg':'key missing'} );
 				}
 				else
 				{
