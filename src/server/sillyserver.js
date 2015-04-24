@@ -18,7 +18,7 @@ function SillyServer( server, secure )
 	this.debug_room = null; //if you enter this room you get all the traffic
 
 	this.MAX_BUFFER = 100;
-	this.buffering = false;
+	this.buffering = false; //allow to store last messages to resend to new users
 	this.verbose = false;
 	this.allow_read_files = false; //dangerous
 	this.files_folder = null; //set to the folder to server files statically
@@ -110,9 +110,16 @@ SillyServer.prototype.onConnection = function(ws)
 	this.clients.push(ws);
 
 	//send id info
-	ws.sendToClient("ID", ws.user_id);
+	ws.sendToClient("ID", ws.user_id );
 
-	//last messages
+	//send room info
+	var clients = this.rooms[ws.room].clients;
+	var room_info = { name: ws.room, clients:[] };
+	for(var i = 0; i < clients.length; ++i)
+		room_info.clients.push( clients[i].user_id );
+	ws.sendToClient("INFO", JSON.stringify( room_info ) );
+
+	//last N messages buffered
 	if(this.buffering)
 		for(var i = 0; i < room.buffer.length; ++i)
 			ws.send(room.buffer[i]);
@@ -122,6 +129,7 @@ SillyServer.prototype.onConnection = function(ws)
 
 	//ON MESSAGE CALLBACK
 	ws.onmessage = (function(event) {
+
 		//console.log(ws.ip + ' = ' + typeof(event.data) + "["+event.data.length+"]:" + event.data );
 		//console.dir(event.data); //like var_dump
 		var is_binary = (typeof(event.data) != "string");

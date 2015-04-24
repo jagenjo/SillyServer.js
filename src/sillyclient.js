@@ -6,6 +6,7 @@ function SillyClient()
 	this.url = "";
 	this.socket = null;
 	this.is_connected = false;
+	this.room = { name: "", clients:[], updated: false };
 	this.clients = {};
 	this.info_transmitted = 0;
 	this.info_received = 0;
@@ -64,7 +65,7 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 		if(that.on_close)
 			that.on_close( e );
 		that.socket = null;
-		that.clients = {};
+		that.room = null;
 		that.is_connected = false;
 	});
 
@@ -122,6 +123,9 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 		if(this.on_user_disconnected) //somebody else is connected
 			this.on_user_disconnected( author_id );
 		delete this.clients[ author_id ];
+		var pos = this.room.clients.indexOf( author_id );
+		if(pos != -1)
+			this.room.clients.splice( pos, 1 );
 	}
 	else if (cmd == "ID") //retrieve your user id
 	{
@@ -130,6 +134,13 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 		this.clients[ author_id ] = { id: author_id, name: this.user_name };
 		if(this.on_ready)
 			this.on_ready( author_id );
+	}
+	else if (cmd == "INFO") //retrieve room info
+	{
+		var room_info = JSON.parse( data );
+		this.room = room_info;
+		if(this.on_room_info)
+			this.on_room_info( room_info );
 	}
 }
 
@@ -148,6 +159,7 @@ SillyClient.prototype.sendMessage = function( msg, target_ids )
 		return;
 	}
 
+	//pack target info
 	if( msg.constructor === String && target_ids )
 		msg = "@" + target_ids.join(",") + "|" + msg;
 
@@ -209,7 +221,7 @@ SillyClient.prototype.getReport = function( on_complete )
 	req.send(null);
 }
 
-//Returns info about a room (which clients are connected)
+//Returns info about a room (which clients are connected now)
 SillyClient.prototype.getRoomInfo = function( name, on_complete )
 {
 	var req = new XMLHttpRequest();
