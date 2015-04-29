@@ -225,7 +225,24 @@ SillyClient.prototype.getReport = function( on_complete )
 SillyClient.prototype.getRoomInfo = function( name, on_complete )
 {
 	var req = new XMLHttpRequest();
-	req.open('GET', "http://" + this.url + "/room_info?name=" + name, true);
+	req.open('GET', "http://" + this.url + "/room/" + name, true);
+	req.onreadystatechange = function (aEvt) {
+	  if (req.readyState == 4) {
+		 if(req.status != 200)
+			return console.error("Error getting room info: ", req.responseText );
+		 var resp = JSON.parse(req.responseText);
+		 if(on_complete)
+			 on_complete( resp.data );
+	  }
+	};
+	req.send(null);
+}
+
+//Returns a list with all the open rooms that start with txt (txt must be at least 6 characters long)
+SillyClient.prototype.findRooms = function( txt, on_complete )
+{
+	var req = new XMLHttpRequest();
+	req.open('GET', "http://" + this.url + "/find?name=" + name, true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)

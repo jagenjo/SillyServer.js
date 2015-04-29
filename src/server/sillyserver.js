@@ -162,7 +162,11 @@ SillyServer.prototype.onConnection = function(ws)
 		this.sendToRoom(ws.room, ws.user_id, "LOGOUT", ws.user_name );
 		var room = this.rooms[ws.room];
 		if(room)
+		{
 			room.clients.splice( room.clients.indexOf(ws), 1);
+			if(room.clients.length == 0)
+				delete this.rooms[ws.room];
+		}
 		this.clients.splice( this.clients.indexOf(ws), 1);
 		ws = null;
 	}).bind(this);
@@ -183,6 +187,29 @@ SillyServer.prototype.getRoomInfo = function(name)
 	var r = { clients: [] };
 	for(var i in room.clients )
 		r.clients.push( room.clients[i].user_id );
+	return r;
+}
+
+SillyServer.prototype.getVars = function(name)
+{
+	var r = {};
+	for(var i in this.db)
+	{
+		if( i.indexOf(name) == 0 )
+			r[i] = this.db[i];
+	}
+	return r;
+}
+
+
+SillyServer.prototype.findRooms = function(name)
+{
+	var r = {};
+	for(var i in this.rooms )
+	{
+		if( i.indexOf(name) == 0 )
+			r[i] = this.getRoomInfo( i );
+	}
 	return r;
 }
 
@@ -331,7 +358,7 @@ SillyServer.prototype.httpHandler = function(request, response)
 				//console.log("end POST");
 			});
 		}
-		else //get
+		else //method == "GET"
 		{
 			var GET = path_info.query;
 			if( GET["action"] == "set")
@@ -364,9 +391,21 @@ SillyServer.prototype.httpHandler = function(request, response)
 			}
 		}
 	}
-	else if(path_info.pathname == "/showvars")
+	else if(path_info.pathname == "/vars")
 	{
-		sendResponse(response, 200, {'status':1,'msg':'var list', 'db': that.db } );
+		var GET = path_info.query;
+		var vars_name = GET["name"];
+		if( !vars_name || vars_name.length < 6 )
+			sendResponse(response, 200, {'status':1,'msg':'invalid vars name, must be at least 6 characters long'} );
+		sendResponse(response, 200, {'status':1,'msg':'var list', 'db': this.getVars(vars_name) });
+	}
+	else if(path_info.pathname.indexOf("/room/") == 0)
+	{
+		var room_name = path_info.pathname.substr(6);
+		if( !room_name || !this.rooms[ room_name ] )
+			sendResponse(response, 200, {'status':1,'msg':'room not found'} );
+		else
+			sendResponse(response, 200, {'status':1,'msg':'room info', data: this.getRoomInfo( room_name )} );
 	}
 	else if(path_info.pathname == "/room_info")
 	{
@@ -376,6 +415,15 @@ SillyServer.prototype.httpHandler = function(request, response)
 				sendResponse(response, 200, {'status':1,'msg':'room not found'} );
 			else
 				sendResponse(response, 200, {'status':1,'msg':'room info', data: this.getRoomInfo( room_name )} );
+	}
+	else if(path_info.pathname == "/find")
+	{
+			var GET = path_info.query;
+			var room_name = GET["name"];
+			if( !room_name || room_name.length < 6 )
+				sendResponse(response, 200, {'status':0,'msg':'name too short, min length is 6'} );
+			else
+				sendResponse(response, 200, {'status':1,'msg':'room info', data: this.findRooms( room_name )} );
 	}
 	else if(path_info.pathname == "/info")
 	{
