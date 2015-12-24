@@ -12,9 +12,8 @@ It has been used in simple web-applications where you want to connect online use
 # Installation
 
 Server is stored in src/server folder
-before launching the server you need to use npm to install the libraries
 ```js
-npm install faye-websocket
+npm install sillyserver
 ```
 
 # Usage

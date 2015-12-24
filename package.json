@@ -1,0 +1,26 @@
+{
+  "name": "sillyserver",
+  "version": "1.0.0",
+  "description": "A simple packet-broadcaster server with rooms and some extra features",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jagenjo/SillyServer.js.git"
+  },
+  "keywords": [
+    "server",
+    "bouncer",
+    "websockets"
+  ],
+  "dependencies": {
+    "faye-websocket":">= 0.1.0"
+  },
+  "author": "Javi Agenjo <javi.agenjo@gmail.com> (http://www.tamats.com)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jagenjo/SillyServer.js/issues"
+  },
+  "homepage": "https://github.com/jagenjo/SillyServer.js#readme"
+}
