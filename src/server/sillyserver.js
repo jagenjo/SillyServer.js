@@ -1,10 +1,12 @@
-var WebSocket = require('./node_modules/faye-websocket/lib/faye/websocket');
+//var WebSocket = require('./node_modules/faye-websocket/lib/faye/websocket');
+var WebSocketServer = require('./node_modules/ws').Server;
 
 var fs        = require('fs'),
     http      = require('http'),
     https     = require('https'),
     qs		  = require('querystring'),
-    url		  = require('url');
+    url		  = require('url'),
+	util	  = require('util'); //for debug
 
 //Server
 function SillyServer( server, secure )
@@ -36,8 +38,11 @@ function SillyServer( server, secure )
 	}
 
 	this.server.addListener('request', this.httpHandler.bind(this) ); //incoming http connections
-	this.server.addListener('upgrade', this.connectionHandler.bind(this) ); //incomming websocket connections
+	//this.server.addListener('upgrade', this.connectionHandler.bind(this) ); //incomming websocket connections
 	this.server.addListener('error', this.errorHandle.bind(this) ); //errors
+
+	this.wss = new WebSocketServer( { server: this.server } );
+	this.wss.on('connection', this.connectionHandler.bind(this));
 }
 
 SillyServer.default_port = 55000;
@@ -55,11 +60,20 @@ SillyServer.prototype.init = function()
 }
 
 //create packet server
+SillyServer.prototype.connectionHandler = function(ws) {
+	ws.ip = ws.upgradeReq.connection.remoteAddress;
+	console.log('open', ws.ip );
+	//console.log(util.inspect(ws.upgradeReq, {showHidden: false, depth: null}));
+	this.onConnection(ws);
+};
+
+/* for FAYE
 SillyServer.prototype.connectionHandler = function(request, socket, head) {
 	var ws = new WebSocket(request, socket, head, ['irc', 'xmpp'], {ping: 5});
 	console.log('open', ws.url, ws.version, ws.protocol);
 	this.onConnection(ws);
 };
+*/
 
 SillyServer.prototype.errorHandle = function(err)
 {
@@ -70,6 +84,7 @@ SillyServer.prototype.errorHandle = function(err)
 //NEW CLIENT
 SillyServer.prototype.onConnection = function(ws)
 {
+
 	//add callbacks
 	ws.sendToClient = function(cmd, data)
 	{
@@ -83,14 +98,14 @@ SillyServer.prototype.onConnection = function(ws)
 		console.log("Banned user trying to enter: " + ws.ip);
 		ws.close();
 		return;
-	}		
+	}
 
 	//initialize
 	ws.user_id = this.last_id;
 	ws.user_name = "user_" + ws.user_id;
 	this.last_id++;
 	ws.packets = 0;
-	var path_info = url.parse(ws.url);
+	var path_info = url.parse(ws.upgradeReq.url);
 	var params = qs.parse(path_info.query);
 
 	//room info
@@ -132,7 +147,7 @@ SillyServer.prototype.onConnection = function(ws)
 
 		//console.log(ws.ip + ' = ' + typeof(event.data) + "["+event.data.length+"]:" + event.data );
 		//console.dir(event.data); //like var_dump
-		var is_binary = (typeof(event.data) != "string");
+		var is_binary = event.data.constructor === String;
 		var data = event.data;
 		var target_ids = null;
 
@@ -156,9 +171,13 @@ SillyServer.prototype.onConnection = function(ws)
 		this.packets += 1;
 	}).bind(this);
 
+	ws.onclose = quitUser.bind(this);
+	ws.onerror = quitUser.bind(this);
+
 	//ON CLOSE CALLBACK
-	ws.onclose = (function(event) {
-		console.log('close', event.code, event.reason);
+	function quitUser(event)
+	{
+		console.log('close: ', ws.user_id, ws.ip, event.code, event.type );
 		this.sendToRoom(ws.room, ws.user_id, "LOGOUT", ws.user_name );
 		var room = this.rooms[ws.room];
 		if(room)
@@ -169,7 +188,7 @@ SillyServer.prototype.onConnection = function(ws)
 		}
 		this.clients.splice( this.clients.indexOf(ws), 1);
 		ws = null;
-	}).bind(this);
+	}
 }
 
 //ROOMS *******
