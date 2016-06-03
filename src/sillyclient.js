@@ -98,7 +98,7 @@ SillyClient.prototype.close = function()
 //Process events 
 SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message )
 {
-	if (cmd == "MSG") //user message received
+	if (cmd == "MSG" || cmd == "DATA") //user message received
 	{
 		if(on_message)
 			on_message( author_id, data );

@@ -1,5 +1,7 @@
-//var WebSocket = require('./node_modules/faye-websocket/lib/faye/websocket');
-var WebSocketServer = require('./node_modules/ws').Server;
+//ref here: https://github.com/websockets/ws/blob/master/doc/ws.md
+var WebSocket = require('./node_modules/ws');
+var WebSocketServer = WebSocket.Server;
+//var WebSocket = require('./node_modules/faye-websocket/lib/faye/websocket'); //old
 
 var fs        = require('fs'),
     http      = require('http'),
@@ -7,6 +9,8 @@ var fs        = require('fs'),
     qs		  = require('querystring'),
     url		  = require('url'),
 	util	  = require('util'); //for debug
+
+//console.log(util.inspect(WebSocket, {showHidden: false, depth: 2}));
 
 //Server
 function SillyServer( server, secure )
@@ -147,7 +151,7 @@ SillyServer.prototype.onConnection = function(ws)
 
 		//console.log(ws.ip + ' = ' + typeof(event.data) + "["+event.data.length+"]:" + event.data );
 		//console.dir(event.data); //like var_dump
-		var is_binary = event.data.constructor === String;
+		var is_binary = event.data.constructor !== String;
 		var data = event.data;
 		var target_ids = null;
 
@@ -234,6 +238,9 @@ SillyServer.prototype.findRooms = function(name)
 
 SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback, target_ids )
 {
+	if(data === undefined)
+		return;
+
 	var room = this.rooms[room_name];
 	if(!room)
 		return;
@@ -242,7 +249,7 @@ SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback, 
 
 	//prepare
 	var packet_data = null;
-	if(typeof(data) == "string")
+	if( data.constructor === String )
 		packet_data = header + data;
 	else //binary data
 	{
@@ -267,6 +274,9 @@ SillyServer.prototype.sendToRoom = function(room_name, id, cmd, data, feedback, 
 
 		//skip in case is a targeted msg
 		if( target_ids && target_ids.indexOf( client.user_id ) == -1 )
+			continue;
+
+		if(client.readyState != WebSocket.OPEN)
 			continue;
 
 		if (feedback || client.user_id != id)
