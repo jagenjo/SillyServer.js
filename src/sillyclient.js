@@ -8,6 +8,7 @@ function SillyClient()
 	this.is_connected = false;
 	this.room = { name: "", clients:[], updated: false };
 	this.clients = {};
+	this.num_clients = 0;
 	this.info_transmitted = 0;
 	this.info_received = 0;
 
@@ -21,6 +22,8 @@ function SillyClient()
 	this.on_close = null;
 	this.on_user_connected = null;
 	this.on_user_disconnected = null;
+
+	this.file_reader = new FileReader();
 }
 
 //Connects to server, you must specify server host (p.e: "tamats.com:55000") and room name
@@ -49,6 +52,7 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 
 	//connect
 	this.socket = new WebSocket("ws://"+url+"/" + room_name + params );
+	this.socket.binaryType = "arraybuffer";
 	this.socket.onopen = function(){  
 		that.is_connected = true;
 		console.log("Socket has been opened! :)");  
@@ -71,11 +75,33 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 
 	this.socket.onmessage = function(msg){  
 		that.info_received += 1;
-		var tokens = msg.data.split("|"); //author id | cmd | data
-		if(tokens.length < 3)
-			console.log("Received: " + msg.data); //Awesome!  
+
+		if(msg.data.constructor === ArrayBuffer )
+		{
+			var buffer = msg.data;
+			processArrayBuffer( buffer );
+		}
+		else if(msg.data.constructor === String )
+		{
+			var tokens = msg.data.split("|"); //author id | cmd | data
+			if(tokens.length < 3)
+				console.log("Received: " + msg.data); //Awesome!  
+			else
+				that.onServerEvent( tokens[0], tokens[1], msg.data.substr( tokens[0].length + tokens[1].length + 2, msg.data.length), on_message );
+		}
 		else
-			that.onServerEvent( tokens[0], tokens[1], msg.data.substr( tokens[0].length + tokens[1].length + 2, msg.data.length), on_message );
+			console.warn("Unknown message type");
+	}
+
+	function processArrayBuffer( buffer )
+	{
+		var buffer_array = new Uint8Array( buffer );
+		var header = buffer_array.subarray(0,32);
+		var data = buffer.slice(32);
+		var header_str = SillyClient.arrayToString( new Uint8Array(header) );
+		var tokens = header_str.split("|"); //author id | cmd | data
+		//author_id, cmd, data, on_message
+		that.onServerEvent( tokens[0], tokens[1], data, on_message );
 	}
 
 	this.socket.onerror = function(err){  
@@ -83,6 +109,14 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 	}
 
 	return true;
+}
+
+SillyClient.arrayToString = function(array)
+{
+	var str = "";
+	for(var i = 0; i < array.length; i++)
+		str += String.fromCharCode(array[i]);
+	return str;
 }
 
 //Close the connection with the server
@@ -109,7 +143,11 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 	{
 		console.log("User connected: " + data);
 		var name = "user_" + author_id.toString(); 
-		this.clients[ author_id ] = { id: author_id, name: name };
+		if(!this.clients[ author_id ])
+		{
+			this.clients[ author_id ] = { id: author_id, name: name };
+			this.num_clients += 1;
+		}
 		if(author_id != this.user_id)
 		{
 			if(this.on_user_connected) //somebody else is connected
@@ -119,10 +157,14 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 	else if (cmd == "LOGOUT") //user leaving
 	{
 		if(this.clients[author_id])
-			console.log("User disconnected: " + this.clients[author_id].name );
+		{
+			console.log("User disconnected: " + this.clients[ author_id ].name );
+			delete this.clients[ author_id ];
+			this.num_clients -= 1;
+		}
+
 		if(this.on_user_disconnected) //somebody else is connected
 			this.on_user_disconnected( author_id );
-		delete this.clients[ author_id ];
 		var pos = this.room.clients.indexOf( author_id );
 		if(pos != -1)
 			this.room.clients.splice( pos, 1 );
@@ -139,6 +181,13 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 	{
 		var room_info = JSON.parse( data );
 		this.room = room_info;
+		this.num_clients = room_info.clients.length;
+		for(var i = 0; i < room_info.clients.length; ++i)
+		{
+			var client_id = room_info.clients[i];
+			this.clients[ client_id ] = { id: client_id, name: "user_" + client_id };
+		}
+
 		if(this.on_room_info)
 			this.on_room_info( room_info );
 	}
@@ -150,7 +199,7 @@ SillyClient.prototype.sendMessage = function( msg, target_ids )
 	if(msg === null)
 		return;
 
-	if(typeof(msg) == "object")
+	if(msg.constructor === Object)
 		msg = JSON.stringify(msg);
 
 	if(!this.socket || this.socket.readyState !== WebSocket.OPEN)
@@ -160,8 +209,14 @@ SillyClient.prototype.sendMessage = function( msg, target_ids )
 	}
 
 	//pack target info
-	if( msg.constructor === String && target_ids )
-		msg = "@" + target_ids.join(",") + "|" + msg;
+	if( target_ids )
+	{
+		var target_str = "@" + (target_ids.constructor === Array ? target_ids.join(",") : target_ids) + "|";
+		if(msg.constructor === String)
+			msg = target_str + msg;
+		else
+			throw("targeted not supported in binary messages");
+	}
 
 	this.socket.send(msg);
 	this.info_transmitted += 1;
