@@ -28,9 +28,14 @@ On the client side include the library sillyclient.js and connect using:
 var server = new SillyClient();
 server.connect( location.host + ":55000", "CHAT");
 
-//this method is called when the user gets connected to the server
+//this method is called when the server accepts the connection (no ID yet)
 server.on_connect = function(){
   //connected
+};
+
+//this method is called when the server gives the user his ID (ready to start transmiting)
+server.on_ready = function(id){
+  //user has an ID
 };
 
 //this methods receives messages from other users (author_id is an unique identifier per user)
