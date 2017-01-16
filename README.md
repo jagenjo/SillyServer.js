@@ -48,6 +48,12 @@ server.on_user_connected = function(msg){
 	//new user!
 }
 
+//this methods is called when a user leaves the room
+server.on_user_disconnected = function(msg){
+	//user is gone
+}
+
+
 //this methods is called when the server gets closed (it shutdowns)
 server.on_close = function(){
   //server closed

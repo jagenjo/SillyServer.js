@@ -24,7 +24,7 @@ function SillyClient()
 	this.on_user_connected = null; //new user connected
 	this.on_user_disconnected = null; //user leaves
 
-	this.file_reader = new FileReader();
+	//this.file_reader = new FileReader();
 }
 
 //Connects to server, you must specify server host (p.e: "tamats.com:55000") and room name
