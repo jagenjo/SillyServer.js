@@ -44,19 +44,22 @@ server.on_message = function( author_id, msg ){
 }
 
 //this methods is called when a new user is connected
-server.on_user_connected = function(msg){
+server.on_user_connected = function( user_id ){
 	//new user!
 }
 
 //this methods is called when a user leaves the room
-server.on_user_disconnected = function(msg){
+server.on_user_disconnected = function( user_id ){
 	//user is gone
 }
-
 
 //this methods is called when the server gets closed (it shutdowns)
 server.on_close = function(){
   //server closed
+};
+
+//this method is called when coulndt connect to the server
+server.on_error = function(err){
 };
 ```
 
