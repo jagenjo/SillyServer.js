@@ -66,11 +66,13 @@ SillyServer.prototype.init = function()
 }
 
 //create packet server
-SillyServer.prototype.connectionHandler = function(ws) {
+SillyServer.prototype.connectionHandler = function(ws,req) {
 	if( ws.upgradeReq )
 		ws.ip = ws.upgradeReq.connection.remoteAddress;
 	else if( ws.connection )
 		ws.ip = ws.connection.remoteAddress;
+	else if( req && req.connection )
+		ws.ip = req.connection.remoteAddress;
 	else
 		ws.ip = "unknown_ip";
 	console.log('open', ws.ip );
