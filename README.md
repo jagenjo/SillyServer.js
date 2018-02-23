@@ -28,7 +28,7 @@ On the client side include the library sillyclient.js and connect using:
 var server = new SillyClient();
 server.connect( location.host + ":55000", "CHAT");
 
-//this method is called when the server accepts the connection (no ID yet)
+//this method is called when the server accepts the connection (no ID yet nor info about the room)
 server.on_connect = function(){
   //connected
 };
@@ -38,25 +38,33 @@ server.on_ready = function(id){
   //user has an ID
 };
 
+//this method is called when we receive the info about the current state of the room (clients connected)
+server.on_room_info = function(info){
+  //to know which users are inside
+};
+
 //this methods receives messages from other users (author_id is an unique identifier per user)
 server.on_message = function( author_id, msg ){
   //data received
 }
 
 //this methods is called when a new user is connected
-server.on_user_connected = function(msg){
+server.on_user_connected = function( user_id ){
 	//new user!
 }
 
 //this methods is called when a user leaves the room
-server.on_user_disconnected = function(msg){
+server.on_user_disconnected = function( user_id ){
 	//user is gone
 }
-
 
 //this methods is called when the server gets closed (it shutdowns)
 server.on_close = function(){
   //server closed
+};
+
+//this method is called when coulndt connect to the server
+server.on_error = function(err){
 };
 ```
 
