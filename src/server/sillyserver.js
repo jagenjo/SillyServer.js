@@ -67,7 +67,12 @@ SillyServer.prototype.init = function()
 
 //create packet server
 SillyServer.prototype.connectionHandler = function(ws) {
-	ws.ip = ws.upgradeReq.connection.remoteAddress;
+	if( ws.upgradeReq )
+		ws.ip = ws.upgradeReq.connection.remoteAddress;
+	else if( ws.connection )
+		ws.ip = ws.connection.remoteAddress;
+	else
+		ws.ip = "unknown_ip";
 	console.log('open', ws.ip );
 	//console.log(util.inspect(ws.upgradeReq, {showHidden: false, depth: null}));
 	this.onConnection(ws);
@@ -482,6 +487,10 @@ SillyServer.prototype.httpHandler = function(request, response)
 		 else
 			sendResponse(response, 300, "cannot read files");
 	}
+}
+
+if (require.main === module) {
+    console.log("SillyServer.js cannot be launched directly, you need to execute main.js");
 }
 
 module.exports.SillyServer = SillyServer;

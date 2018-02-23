@@ -23,9 +23,10 @@ function SillyClient()
 	this.on_close = null; //when the server closes
 	this.on_user_connected = null; //new user connected
 	this.on_user_disconnected = null; //user leaves
-
-	//this.file_reader = new FileReader();
+	this.on_error = null; //when cannot connect
 }
+
+SillyClient.verbose = false;
 
 //Connects to server, you must specify server host (p.e: "tamats.com:55000") and room name
 SillyClient.prototype.connect = function( url, room_name, on_connect, on_message, on_close )
@@ -38,6 +39,7 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 
 	if(this.socket)
 		this.socket.close();
+	this.clients = {};
 
 	if(typeof(WebSocket) == "undefined")
 		WebSocket = window.MozWebSocket;
@@ -56,7 +58,8 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 	this.socket.binaryType = "arraybuffer";
 	this.socket.onopen = function(){  
 		that.is_connected = true;
-		console.log("Socket has been opened! :)");  
+		if(SillyClient.verbose)
+			console.log("Socket has been opened! :)");  
 		if(on_connect && typeof(on_connect) == "function" )
 			on_connect();
 		if(that.on_connect)
@@ -64,7 +67,8 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 	}
 
 	this.socket.addEventListener("close", function(e) {
-		console.log("Socket has been closed: ", e); 
+		if(SillyClient.verbose)
+			console.log("Socket has been closed: ", e); 
 		if(on_close)
 			on_close();
 		if(that.on_close)
@@ -86,7 +90,10 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 		{
 			var tokens = msg.data.split("|"); //author id | cmd | data
 			if(tokens.length < 3)
-				console.log("Received: " + msg.data); //Awesome!  
+			{
+				if(SillyClient.verbose)
+					console.log("Received: " + msg.data); //Awesome!  
+			}
 			else
 				that.onServerEvent( tokens[0], tokens[1], msg.data.substr( tokens[0].length + tokens[1].length + 2, msg.data.length), on_message );
 		}
@@ -107,6 +114,8 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 
 	this.socket.onerror = function(err){  
 		console.log("error: ", err );
+		if(that.on_error)
+			that.on_error(err);
 	}
 
 	return true;
@@ -128,6 +137,8 @@ SillyClient.prototype.close = function()
 
 	this.socket.close();
 	this.socket = null;
+	this.clients = {};
+	this.is_connected = false;
 }
 
 //Process events 
@@ -142,7 +153,8 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 	}
 	else if (cmd == "LOGIN") //new user entering
 	{
-		console.log("User connected: " + data);
+		if(SillyClient.verbose)
+			console.log("User connected: " + data);
 		var name = "user_" + author_id.toString(); 
 		if(!this.clients[ author_id ])
 		{
@@ -159,7 +171,8 @@ SillyClient.prototype.onServerEvent = function( author_id, cmd, data, on_message
 	{
 		if(this.clients[author_id])
 		{
-			console.log("User disconnected: " + this.clients[ author_id ].name );
+			if(SillyClient.verbose)
+				console.log("User disconnected: " + this.clients[ author_id ].name );
 			delete this.clients[ author_id ];
 			this.num_clients -= 1;
 		}
@@ -276,6 +289,24 @@ SillyClient.prototype.getReport = function( on_complete )
 	};
 	req.send(null);
 }
+
+//Returns a report with information about clients connected and rooms open
+SillyClient.getReport = function( url, on_complete )
+{
+	var req = new XMLHttpRequest();
+	req.open('GET', "http://" + url + "/info", true);
+	req.onreadystatechange = function (aEvt) {
+	  if (req.readyState == 4) {
+		 if(req.status != 200)
+			return console.error("Error getting report: ", req.responseText );
+		 var resp = JSON.parse(req.responseText);
+		 if(on_complete)
+			 on_complete( resp );
+	  }
+	};
+	req.send(null);
+}
+
 
 //Returns info about a room (which clients are connected now)
 SillyClient.prototype.getRoomInfo = function( name, on_complete )
