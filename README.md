@@ -20,7 +20,7 @@ cp node_modules/sillyserver/src/server/*.js .
 or if in windows
 ```js
 npm install sillyserver
-cp node_modules\sillyserver\src/server\*.js .
+cp node_modules\sillyserver\src\server\*.js .
 ```
 
 
