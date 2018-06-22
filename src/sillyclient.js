@@ -38,7 +38,11 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 		throw("You must specify the server URL of the SillyServer");
 
 	if(this.socket)
+	{
+		this.socket.onmessage = null;
+		this.socket.onclose = null;
 		this.socket.close();
+	}
 	this.clients = {};
 
 	if(typeof(WebSocket) == "undefined")
@@ -53,22 +57,30 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 	if(this.feedback)
 		params = "?feedback=1";
 
+	var protocol = "";
+	if( url.substr(0,3) != "ws:" && url.substr(0,4) != "wss:" )
+		protocol = "ws://"; //default protocol
+
+	var final_url = this._final_url = protocol + url + "/" + room_name + params;
+
 	//connect
-	this.socket = new WebSocket("ws://"+url+"/" + room_name + params );
+	this.socket = new WebSocket( final_url );
 	this.socket.binaryType = "arraybuffer";
 	this.socket.onopen = function(){  
 		that.is_connected = true;
 		if(SillyClient.verbose)
-			console.log("Socket has been opened! :)");  
+			console.log("SillyClient socket opened");  
 		if(on_connect && typeof(on_connect) == "function" )
 			on_connect();
 		if(that.on_connect)
 			that.on_connect();
 	}
 
-	this.socket.addEventListener("close", function(e) {
+	this.socket.onclose = function(e) {
 		if(SillyClient.verbose)
-			console.log("Socket has been closed: ", e); 
+			console.log("SillyClient socket has been closed: ", e); 
+		if(that.socket != this)
+			return;
 		if(on_close)
 			on_close();
 		if(that.on_close)
@@ -76,17 +88,20 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 		that.socket = null;
 		that.room = null;
 		that.is_connected = false;
-	});
+	};
 
 	this.socket.onmessage = function(msg){  
+		if(that.socket != this)
+			return;
+
 		that.info_received += 1;
 
-		if(msg.data.constructor === ArrayBuffer )
+		if( msg.data.constructor === ArrayBuffer )
 		{
 			var buffer = msg.data;
 			processArrayBuffer( buffer );
 		}
-		else if(msg.data.constructor === String )
+		else if( msg.data.constructor === String )
 		{
 			var tokens = msg.data.split("|"); //author id | cmd | data
 			if(tokens.length < 3)
