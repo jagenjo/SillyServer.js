@@ -14,7 +14,15 @@ It has been used in simple web-applications where you want to connect online use
 Server is stored in src/server folder
 ```js
 npm install sillyserver
+cp node_modules/sillyserver/src/server/*.js .
 ```
+
+or if in windows
+```js
+npm install sillyserver
+cp node_modules\sillyserver\src/server\*.js .
+```
+
 
 # Usage
 
