@@ -11,6 +11,8 @@ It has been used in simple web-applications where you want to connect online use
 
 # Installation
 
+It requires to have installed nodejs.
+
 Server is stored in src/server folder
 ```js
 npm install sillyserver
