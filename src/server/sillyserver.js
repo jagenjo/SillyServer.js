@@ -68,6 +68,7 @@ SillyServer.prototype.init = function()
 
 //create packet server
 SillyServer.prototype.connectionHandler = function(ws,req) {
+
 	if( ws.upgradeReq )
 		ws.ip = ws.upgradeReq.connection.remoteAddress;
 	else if( ws.connection )
@@ -77,8 +78,7 @@ SillyServer.prototype.connectionHandler = function(ws,req) {
 	else
 		ws.ip = "unknown_ip";
 	console.log('open', ws.ip );
-	//console.log(util.inspect(ws.upgradeReq, {showHidden: false, depth: null}));
-	this.onConnection(ws);
+	this.onConnection( ws, ws.upgradeReq || req );
 };
 
 /* for FAYE
@@ -96,9 +96,8 @@ SillyServer.prototype.errorHandle = function(err)
 }
 
 //NEW CLIENT
-SillyServer.prototype.onConnection = function(ws)
+SillyServer.prototype.onConnection = function(ws, req)
 {
-
 	//add callbacks
 	ws.sendToClient = function(cmd, data)
 	{
@@ -119,7 +118,8 @@ SillyServer.prototype.onConnection = function(ws)
 	ws.user_name = "user_" + ws.user_id;
 	this.last_id++;
 	ws.packets = 0;
-	var path_info = url.parse(ws.upgradeReq.url);
+
+	var path_info = url.parse( req.url );
 	var params = qs.parse(path_info.query);
 
 	//room info
