@@ -13,16 +13,17 @@ It has been used in simple web-applications where you want to connect online use
 
 It requires to have installed nodejs.
 
-Server is stored in src/server folder
+For Linux and Mac
+
 ```js
 npm install sillyserver
 cp node_modules/sillyserver/src/server/*.js .
 ```
 
-or if in windows
+For Windows
 ```js
 npm install sillyserver
-cp node_modules\sillyserver\src\server\*.js .
+copy node_modules\sillyserver\src\server\*.js .
 ```
 
 
