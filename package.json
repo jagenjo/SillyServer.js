@@ -1,6 +1,6 @@
 {
   "name": "sillyserver",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "A simple packet-broadcaster server with rooms and some extra features",
   "main": "./src/server/sillyserver.js",
   "scripts": {

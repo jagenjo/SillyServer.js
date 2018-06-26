@@ -51,12 +51,13 @@ function SillyServer( server, secure )
 	this.on_disconnected = null;
 }
 
+SillyServer.version = "0.5";
 SillyServer.default_port = 55000;
 
 SillyServer.prototype.listen = function( port )
 {
 	this.port = port || SillyServer.default_port;
-	console.log('SillyServer listening in port ', this.port);
+	console.log('SillyServer v'+SillyServer.version+' listening in port ', this.port);
 	this.server.listen( this.port );
 }
 
