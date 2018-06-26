@@ -31,7 +31,7 @@ copy node_modules\sillyserver\src\server\*.js .
 
 Launch the server using the command:
 ```js
-nodejs main.js -port 55000
+node main.js -port 55000
 ```
 
 On the client side include the library sillyclient.js and connect using:
