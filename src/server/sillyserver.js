@@ -51,7 +51,7 @@ function SillyServer( server, secure )
 	this.on_disconnected = null;
 }
 
-SillyServer.version = "0.5";
+SillyServer.version = "1.3";
 SillyServer.default_port = 55000;
 
 SillyServer.prototype.listen = function( port )
