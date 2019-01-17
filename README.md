@@ -34,7 +34,7 @@ copy node_modules\sillyserver\src\server\*.js .
 
 You need to include the sillyclient.js in your HTML:
 ```html
-	<script src="sillyclient.js"></script>
+<script src="sillyclient.js"></script>
 ```
 
 
