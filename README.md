@@ -11,6 +11,8 @@ It has been used in simple web-applications where you want to connect online use
 
 # Installation
 
+To install the server app in your own public server machine follow the next steps.
+
 It requires to have installed nodejs.
 
 For Linux and Mac
