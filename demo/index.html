@@ -49,8 +49,11 @@
             <h1 class="cover-heading">SillyServer.js</h1>
 
             <p class="lead">Connect to the SillyServer using the SillyClient.js library hosted in the <a class='btn btn-primary' href="https://github.com/jagenjo/SillyServer.js">SillyServer.js</a> repository.</p>
-            <p class="lead" id="server_info">Not connected</p>
-            <div class="lead" id="chat"></div>
+            <div class="input-group">
+				<input class="form-control" placeHolder="roomName" type="text" id="roomname"/><span class="input-group-btn"><button class="btn btn-primary" id="connect-room">Connect</button></span>
+			</div>
+			<p class="lead" id="server_info">Not connected</p>
+            <div class="lead" id="log"></div>
           </div>
 
           <div class="">

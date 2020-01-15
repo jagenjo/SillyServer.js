@@ -1,38 +1,47 @@
-//ECV EXAMPLE APP
+//EXAMPLE APP
 //*****************
+var server = null;
+
+var room_name = "DEMO";
+$("#roomname").val( room_name );
+
+$("#connect-room").click( function(){
+	room_name = $("#roomname").val();
+	console.log("connecting to " + room_name );
+	server.close();
+	server.connect( location.host + ":55000", room_name );
+});
 
 //connect to the server
-var server = new SillyClient();
-server.connect( location.host + ":55000", "DEMO");
+server = new SillyClient();
+server.connect( location.host + ":55000", room_name);
 
 //change the text in the website
 $("#server_info").html( "Conectandose..." );
 
 //this method is called when the user gets connected to the server
-server.on_connect = function(){
-	$("#server_info").html( "<span class='good btn btn-success'>Connected</span> Data received <span id='data-sent'>0</span>" );
+server.on_connect = function( server ){
+	$("#server_info").html( "<span class='good btn btn-success'>Connected to "+ (server ? server.room.name : "" ) +"</span> Data received <span id='data-sent'>0</span>" );
 	$("#server-icon")[0].src = "imgs/server-icon.png";
 };
 
 //this methods receives messages from other users (author_id its an unique identifier)
 server.on_message = function( author_id, msg ){
 	//change the website
-	var chat = $("#chat")[0];
+	var log = $("#log")[0];
 
 	var data = JSON.parse(msg);
 
 	$("#data-sent").html( server.info_received );
 
-	if(data.type == "chat")
-	{
-		if(chat.childNodes.length > 200)
-			$(chat.childNodes[0]).remove();
-		$(chat).append("<p class='msg'>user_"+author_id+": "+data.text+"</p>");
-		$(chat).animate({
-			  scrollTop:  10000000000000
-		 });
-	}
-	else if(data.type == "cursor")
+	if(log.childNodes.length > 200)
+		$(log.childNodes[0]).remove();
+	$(log).append("<p class='msg'>user_"+author_id+": " + msg + "</p>");
+	$(log).animate({
+		  scrollTop:  10000000000000
+	 });
+	
+	if(data.type == "cursor")
 	{
 		setCursor(author_id, data.x, data.y);
 	}
@@ -41,14 +50,14 @@ server.on_message = function( author_id, msg ){
 //this methods is called when a new user is connected
 server.on_user_connected = function(id){
 	//new user!
-	$("#chat").append("<p class='msg'>User connected</p>");
+	$("#log").append("<p class='msg'>User connected</p>");
 	setCursor(id,0,0);
 }
 
 //this methods is called when a new user is connected
 server.on_user_disconnected = function(id){
 	//bye user
-	$("#chat").append("<p class='msg'>User disconnected</p>");
+	$("#log").append("<p class='msg'>User disconnected</p>");
 	$("#cursor-" + id).remove();
 }
 

@@ -32,8 +32,8 @@ function SillyServer( server, secure )
 	{
 		this.server = secure
 				   ? https.createServer({
-					   key:  fs.readFileSync(__dirname + 'server.key'),
-					   cert: fs.readFileSync(__dirname + 'server.crt')
+					   key:  fs.readFileSync(__dirname + '/server.key'),
+					   cert: fs.readFileSync(__dirname + '/server.crt')
 					 })
 				   : http.createServer();
 	}

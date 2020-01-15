@@ -59,7 +59,9 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 
 	var protocol = "";
 	if( url.substr(0,3) != "ws:" && url.substr(0,4) != "wss:" )
-		protocol = "ws://"; //default protocol
+	{
+		protocol = location.protocol == "http:" ? "ws://" : "wss://"; //default protocol
+	}
 
 	var final_url = this._final_url = protocol + url + "/" + room_name + params;
 
@@ -68,12 +70,13 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 	this.socket.binaryType = "arraybuffer";
 	this.socket.onopen = function(){  
 		that.is_connected = true;
+		that.room.name = room_name;
 		if(SillyClient.verbose)
 			console.log("SillyClient socket opened");  
 		if(on_connect && typeof(on_connect) == "function" )
 			on_connect();
 		if(that.on_connect)
-			that.on_connect();
+			that.on_connect(that);
 	}
 
 	this.socket.onclose = function(e) {
@@ -341,10 +344,18 @@ SillyClient.prototype.getRoomInfo = function( name, on_complete )
 }
 
 //Returns a list with all the open rooms that start with txt (txt must be at least 6 characters long)
-SillyClient.prototype.findRooms = function( txt, on_complete )
+SillyClient.prototype.findRooms = function( name_str, on_complete )
 {
+	name_str = name_str || "";
 	var req = new XMLHttpRequest();
-	req.open('GET', "http://" + this.url + "/find?name=" + name, true);
+	var url = this.url;
+	var protocol = "http://";
+	if( url.indexOf("wss://") != -1)
+	{
+		protocol = "https://";
+		url = url.substr(6);
+	}
+	req.open('GET', protocol + url + "/find?name=" + name_str, true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)

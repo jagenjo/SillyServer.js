@@ -9,7 +9,7 @@ body {
 	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ad6499', endColorstr='#492033',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 }
 
-#chat {
+#log {
 	height: 300px;
 	border-radius: 3px;
 	border: 0;
@@ -22,7 +22,7 @@ body {
 	text-align: left;
 }
 
-#chat p {
+#log p {
 	font-size: 14px;
 	margin: 2px;
 }
