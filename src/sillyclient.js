@@ -254,13 +254,28 @@ SillyClient.prototype.sendMessage = function( msg, target_ids )
 	this.info_transmitted += 1;
 }
 
+SillyClient.prototype.getBaseURL = function()
+{
+	var url = this.url;
+	var protocol = location.protocol + "//";
+	if( url.indexOf("wss://") != -1)
+	{
+		protocol = "https://";
+		url = url.substr(6);
+	}
+	var index = url.indexOf("/");
+	var host = url.substr(0,index);
+	return protocol + host;
+}
+
 //To store temporal information in the server
 SillyClient.prototype.storeData = function(key, value, on_complete)
 {
 	if(!this.url)
 		throw("Cannot storeData if not connected to the server");
 	var req = new XMLHttpRequest();
-	req.open('GET', "http://" + this.url + "/data?action=set&key="+key + ((value !== undefined && value !== null) ? "&value="+value : ""), true);
+	var base_url = this.getBaseURL();
+	req.open('GET', base_url + "/data?action=set&key="+key + ((value !== undefined && value !== null) ? "&value="+value : ""), true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)
@@ -278,7 +293,8 @@ SillyClient.prototype.loadData = function(key, on_complete)
 	if(!this.url)
 		throw("Cannot loadData if not connected to the server");
 	var req = new XMLHttpRequest();
-	req.open('GET', "http://" + this.url + "/data?action=get&key="+key, true);
+	var base_url = this.getBaseURL();
+	req.open('GET', base_url + "/data?action=get&key="+key, true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)
@@ -295,7 +311,8 @@ SillyClient.prototype.loadData = function(key, on_complete)
 SillyClient.prototype.getReport = function( on_complete )
 {
 	var req = new XMLHttpRequest();
-	req.open('GET', "http://" + this.url + "/info", true);
+	var base_url = this.getBaseURL();
+	req.open('GET', base_url + "/info", true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)
@@ -312,7 +329,15 @@ SillyClient.prototype.getReport = function( on_complete )
 SillyClient.getReport = function( url, on_complete )
 {
 	var req = new XMLHttpRequest();
-	req.open('GET', "http://" + url + "/info", true);
+	var protocol = location.protocol + "//";
+	if( url.indexOf("wss://") != -1)
+	{
+		protocol = "https://";
+		url = url.substr(6);
+	}
+	var index = url.indexOf("/");
+	var host = url.substr(0,index);
+	req.open('GET', protocol + host + "/info", true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)
@@ -330,7 +355,8 @@ SillyClient.getReport = function( url, on_complete )
 SillyClient.prototype.getRoomInfo = function( name, on_complete )
 {
 	var req = new XMLHttpRequest();
-	req.open('GET', "http://" + this.url + "/room/" + name, true);
+	var base_url = this.getBaseURL();
+	req.open('GET', base_url + "/room/" + name, true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)
@@ -348,14 +374,8 @@ SillyClient.prototype.findRooms = function( name_str, on_complete )
 {
 	name_str = name_str || "";
 	var req = new XMLHttpRequest();
-	var url = this.url;
-	var protocol = "http://";
-	if( url.indexOf("wss://") != -1)
-	{
-		protocol = "https://";
-		url = url.substr(6);
-	}
-	req.open('GET', protocol + url + "/find?name=" + name_str, true);
+	var base_url = this.getBaseURL();
+	req.open('GET', base_url + "/find?name=" + name_str, true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)

@@ -471,10 +471,10 @@ SillyServer.prototype.httpHandler = function(request, response)
 	{
 			var GET = path_info.query;
 			var room_name = GET["name"];
-			if( !room_name || room_name.length < 6 )
-				sendResponse(response, 200, {'status':0,'msg':'name too short, min length is 6'} );
+			if( !room_name || room_name.length < 3 )
+				sendResponse(response, 200, {'status':0,'msg':'name too short, min length is 3'} );
 			else
-				sendResponse(response, 200, {'status':1,'msg':'room info', data: this.findRooms( room_name )} );
+				sendResponse(response, 200, {'status':1,'msg':'rooms info', data: this.findRooms( room_name )} );
 	}
 	else if(path_info.pathname == "/info")
 	{
