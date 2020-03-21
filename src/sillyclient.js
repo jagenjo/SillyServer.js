@@ -70,7 +70,10 @@ SillyClient.prototype.connect = function( url, room_name, on_connect, on_message
 	this.socket.binaryType = "arraybuffer";
 	this.socket.onopen = function(){  
 		that.is_connected = true;
-		that.room.name = room_name;
+		that.room = { 
+			name: room_name,
+			clients: []
+		};
 		if(SillyClient.verbose)
 			console.log("SillyClient socket opened");  
 		if(on_connect && typeof(on_connect) == "function" )
