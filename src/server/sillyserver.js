@@ -200,6 +200,12 @@ SillyServer.prototype.onConnection = function(ws, req)
 	//ON CLOSE CALLBACK
 	function quitUser(event)
 	{
+		if(!ws) //it happens sometimes
+		{
+			console.log('quit without ws?');
+			return;
+		}
+
 		console.log('close: ', ws.user_id, ws.ip, event.code, event.type );
 		this.sendToRoom(ws.room, ws.user_id, "LOGOUT", ws.user_name );
 		var room = this.rooms[ws.room];
@@ -210,7 +216,6 @@ SillyServer.prototype.onConnection = function(ws, req)
 				delete this.rooms[ws.room];
 		}
 		this.clients.splice( this.clients.indexOf(ws), 1);
-		ws = null;
 
 		if(this.on_disconnected)
 			this.on_disconnected(ws);
