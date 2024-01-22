@@ -266,9 +266,26 @@ SillyClient.prototype.getBaseURL = function()
 		protocol = "https://";
 		url = url.substr(6);
 	}
+	else if(url.indexOf("ws://") != -1) //remove protocol
+		url = url.substr(5);
+	
 	var index = url.indexOf("/");
-	var host = url.substr(0,index);
-	return protocol + host;
+	var domain = url.substr(0,index);
+	var subaddress = url.substr(index);
+	var port_index = domain.indexOf(":");
+	var has_port = port_index != -1;
+	if(has_port)
+	{
+		var index = url.indexOf("/");
+		return protocol + domain.substr(0,port_index);
+	}
+	//no port, means redirected
+	//HACK for redirection
+	var wsindex = subaddress.indexOf("/ws");
+	if(wsindex != -1)
+		subaddress = subaddress.substr(0,wsindex+1);
+
+	return protocol + domain + "/" + subaddress
 }
 
 //To store temporal information in the server
@@ -276,18 +293,24 @@ SillyClient.prototype.storeData = function(key, value, on_complete)
 {
 	if(!this.url)
 		throw("Cannot storeData if not connected to the server");
-	var req = new XMLHttpRequest();
 	var base_url = this.getBaseURL();
+
+	return new Promise(function(resolve,fail){
+	var req = new XMLHttpRequest();
 	req.open('GET', base_url + "/data?action=set&key="+key + ((value !== undefined && value !== null) ? "&value="+value : ""), true);
 	req.onreadystatechange = function (aEvt) {
 	  if (req.readyState == 4) {
 		 if(req.status != 200)
 			return console.error("Error setting data: ", req.responseText );
-		 if(on_complete)
-			 on_complete( JSON.parse(req.responseText) );
+		var data = JSON.parse(req.responseText);
+		if(on_complete)
+			 on_complete( data );
+		resolve(data);
 	  }
 	};
+	req.onerror = fail;
 	req.send(null);
+	});
 }
 
 //To retrieve the temporal information from the server
@@ -295,19 +318,23 @@ SillyClient.prototype.loadData = function(key, on_complete)
 {
 	if(!this.url)
 		throw("Cannot loadData if not connected to the server");
-	var req = new XMLHttpRequest();
 	var base_url = this.getBaseURL();
-	req.open('GET', base_url + "/data?action=get&key="+key, true);
-	req.onreadystatechange = function (aEvt) {
-	  if (req.readyState == 4) {
-		 if(req.status != 200)
-			return console.error("Error setting data: ", req.responseText );
-		 var resp = JSON.parse(req.responseText);
-		 if(on_complete)
-			 on_complete( resp.data );
-	  }
-	};
-	req.send(null);
+	var req = new XMLHttpRequest();
+	return new Promise(function(resolve,fail){
+		req.open('GET', base_url + "/data?action=get&key="+key, true);
+		req.onreadystatechange = function (aEvt) {
+		if (req.readyState == 4) {
+			if(req.status != 200)
+				return console.error("Error setting data: ", req.responseText );
+			var resp = JSON.parse(req.responseText);
+			if(on_complete)
+				on_complete( resp.data );
+			resolve(resp.data);
+		}
+		};
+		req.onerror = fail;
+		req.send(null);
+	});
 }
 
 //Returns a report with information about clients connected and rooms open

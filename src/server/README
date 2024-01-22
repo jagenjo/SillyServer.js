@@ -1,1 +1,11 @@
 certs are in /etc/letsencrypt/live/tamats.com
+
+node main.js -ssl
+
+
+launch with screen:
+screen -S sillyserver
+
+detach: Control+a d
+
+reattach: screen -r
