@@ -277,7 +277,7 @@ SillyClient.prototype.getBaseURL = function()
 	if(has_port)
 	{
 		var index = url.indexOf("/");
-		return protocol + domain.substr(0,port_index);
+		return protocol + domain; //.substr(0,port_index);
 	}
 	//no port, means redirected
 	//HACK for redirection
@@ -340,24 +340,29 @@ SillyClient.prototype.loadData = function(key, on_complete)
 //Returns a report with information about clients connected and rooms open
 SillyClient.prototype.getReport = function( on_complete )
 {
-	var req = new XMLHttpRequest();
 	var base_url = this.getBaseURL();
-	req.open('GET', base_url + "/info", true);
-	req.onreadystatechange = function (aEvt) {
-	  if (req.readyState == 4) {
-		 if(req.status != 200)
-			return console.error("Error getting report: ", req.responseText );
-		 var resp = JSON.parse(req.responseText);
-		 if(on_complete)
-			 on_complete( resp );
-	  }
-	};
-	req.send(null);
+	return new Promise(function(resolve,fail){
+		var req = new XMLHttpRequest();
+		req.open('GET', base_url + "/info", true);
+		req.onreadystatechange = function (aEvt) {
+		if (req.readyState == 4) {
+			if(req.status != 200)
+				return console.error("Error getting report: ", req.responseText );
+			var resp = JSON.parse(req.responseText);
+			if(on_complete)
+				on_complete( resp );
+			resolve(resp);
+		}
+		};
+		req.onerror = fail;
+		req.send(null);
+	});
 }
 
 //Returns a report with information about clients connected and rooms open
 SillyClient.getReport = function( url, on_complete )
 {
+	return new Promise(function(resolve,fail){
 	var req = new XMLHttpRequest();
 	var protocol = location.protocol + "//";
 	if( url.indexOf("wss://") != -1)
@@ -375,45 +380,56 @@ SillyClient.getReport = function( url, on_complete )
 		 var resp = JSON.parse(req.responseText);
 		 if(on_complete)
 			 on_complete( resp );
+		 resolve(resp);
 	  }
 	};
+	req.onerror = fail;
 	req.send(null);
+});
 }
 
 
 //Returns info about a room (which clients are connected now)
 SillyClient.prototype.getRoomInfo = function( name, on_complete )
 {
-	var req = new XMLHttpRequest();
 	var base_url = this.getBaseURL();
-	req.open('GET', base_url + "/room/" + name, true);
-	req.onreadystatechange = function (aEvt) {
-	  if (req.readyState == 4) {
-		 if(req.status != 200)
-			return console.error("Error getting room info: ", req.responseText );
-		 var resp = JSON.parse(req.responseText);
-		 if(on_complete)
-			 on_complete( resp.data );
-	  }
-	};
-	req.send(null);
+	return new Promise(function(resolve,fail){
+		var req = new XMLHttpRequest();
+		req.open('GET', base_url + "/room/" + name, true);
+		req.onreadystatechange = function (aEvt) {
+			if (req.readyState == 4) {
+				if(req.status != 200)
+					return console.error("Error getting room info: ", req.responseText );
+				var resp = JSON.parse(req.responseText);
+				if(on_complete)
+					on_complete( resp.data );
+				resolve(resp);
+			}
+		}
+		req.onerror = fail;
+		req.send(null);
+	});
 }
 
 //Returns a list with all the open rooms that start with txt (txt must be at least 6 characters long)
 SillyClient.prototype.findRooms = function( name_str, on_complete )
 {
 	name_str = name_str || "";
-	var req = new XMLHttpRequest();
 	var base_url = this.getBaseURL();
-	req.open('GET', base_url + "/find?name=" + name_str, true);
-	req.onreadystatechange = function (aEvt) {
-	  if (req.readyState == 4) {
-		 if(req.status != 200)
-			return console.error("Error getting room info: ", req.responseText );
-		 var resp = JSON.parse(req.responseText);
-		 if(on_complete)
-			 on_complete( resp.data );
-	  }
-	};
-	req.send(null);
+	return new Promise(function(resolve,fail){
+		var req = new XMLHttpRequest();
+		req.open('GET', base_url + "/find?name=" + name_str, true);
+		req.onreadystatechange = function (aEvt) {
+		if (req.readyState == 4) {
+			if(req.status != 200)
+				return console.error("Error getting room info: ", req.responseText );
+			var resp = JSON.parse(req.responseText);
+			if(on_complete)
+				on_complete( resp.data );
+				resolve(resp.data);
+			}
+		}
+		req.onerror = fail;
+		req.send(null);
+	});
 }
